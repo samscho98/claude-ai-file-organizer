@@ -1,0 +1,38 @@
+# Important Files for Claude AI File Organizer
+# One file pattern per line. These will be prioritized during organization.
+# Use glob patterns (e.g., *.py, src/*.md)
+# Lines starting with # are comments
+
+# Configuration files
+config.ini
+pyproject.toml
+setup.py
+package.json
+.env.example
+
+# Documentation
+README.md
+CONTRIBUTING.md
+LICENSE
+docs/*.md
+docs/*.rst
+
+# Main code entry points
+main.py
+src/main.py
+app.py
+index.js
+manage.py
+
+# Core functionality
+src/core/*.py
+src/utils/*.py
+src/api/*.py
+src/models/*.py
+lib/*.py
+lib/*.js
+
+# Tests (prioritized lower)
+tests/*.py
+test_*.py
+*_test.py

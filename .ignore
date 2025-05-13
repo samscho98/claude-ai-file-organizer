@@ -1,0 +1,33 @@
+# Directories to exclude (must end with '/')
+.git/
+.idea/
+__pycache__/
+venv/
+node_modules/
+build/
+dist/
+tmp/
+cache/
+logs/
+.venv/
+
+# Files to exclude
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+.env
+.env.*
+config.local.js
+*.svg
+
+# Project-specific excludes
+requirements/
+data/
+output/
+audio/

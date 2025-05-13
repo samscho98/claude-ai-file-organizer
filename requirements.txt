@@ -1,0 +1,15 @@
+# Installation dependencies
+setuptools>=42.0.0  # Required for setup.py to work
+
+# Core dependencies
+# No additional hard dependencies required for basic functionality
+
+# Optional dependencies
+tiktoken>=0.3.0  # For accurate token counting
+
+# For handling YAML files in API endpoint extraction
+PyYAML>=6.0  # Optional, only needed if extracting API endpoints from YAML files
+
+# Development dependencies (uncomment if needed)
+# pytest>=7.0.0  # For running tests
+# black>=22.0.0  # For code formatting
