@@ -20,7 +20,7 @@ Perfect for getting AI assistance with large codebases where the entire project 
 "*The context window and message limit of claude.ai’s free open beta can vary depending on current demand.*
 The **maximum length** of prompt that Claude can process is its context window. The context window for Claude Pro and our API is currently **200k+ tokens (about 500 pages of text or 100 images)**. " [Source - support.anthropic.com](https://support.anthropic.com/en/articles/7996856-what-is-the-maximum-prompt-length).
 
-*It is advised to not go far above 25% of the token limit*.
+*It is advised to not go far above 25% of the token limit with project knowledge*.
 
 ## ✨ Features
 
