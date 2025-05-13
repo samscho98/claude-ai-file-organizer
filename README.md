@@ -24,6 +24,8 @@ The **maximum length** of prompt that Claude can process is its context window. 
 
 ## ✨ Features
 
+![claude_organizer](https://github.com/user-attachments/assets/c744f932-d776-44bd-8462-ee77139dfdda)
+
 - **Smart File Selection**: Prioritizes files based on importance settings
 - **Token Management**: Estimates and limits token usage for Claude AI
 - **Structure Preservation**: Files are organized while maintaining their relationship to the project structure
