@@ -4,6 +4,7 @@ File scanning and path filtering logic for Claude AI File Organizer.
 
 import os
 import fnmatch
+import glob
 from pathlib import Path
 from src.utils.config import load_important_files
 
@@ -97,7 +98,21 @@ def calculate_importance(file_path, config):
             
             # Check if the file matches any pattern in the important files list
             for pattern in important_patterns:
-                if fnmatch.fnmatch(file_name, pattern) or fnmatch.fnmatch(normalized_path, pattern):
+                # Check for recursive pattern with '**'
+                if '**' in pattern:
+                    # Convert pattern to glob pattern and check if file matches
+                    # Replace single asterisks with glob patterns
+                    root_dir = os.path.dirname(os.path.abspath(important_files_path))
+                    glob_pattern = os.path.join(root_dir, pattern)
+                    matching_files = glob.glob(glob_pattern, recursive=True)
+                    
+                    # Check if the file matches any of the globbed files
+                    abs_file_path = os.path.abspath(file_path)
+                    if any(os.path.samefile(abs_file_path, match) for match in matching_files if os.path.isfile(match)):
+                        importance += 15
+                        break
+                # Standard pattern matching with fnmatch
+                elif fnmatch.fnmatch(file_name, pattern) or fnmatch.fnmatch(normalized_path, pattern):
                     importance += 15
                     break
         except Exception as e:

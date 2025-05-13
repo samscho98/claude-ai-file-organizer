@@ -131,7 +131,7 @@ def organize_files(files_info, max_tokens, generate_structure=True, generate_rea
         max_tokens (int): Maximum token limit
         
     Returns:
-        list: List of organized files with token information
+        tuple: (list of organized files with token information, export folder path)
     """
     # Prioritize files
     prioritized_files = prioritize_files(files_info)
@@ -163,7 +163,7 @@ def organize_files(files_info, max_tokens, generate_structure=True, generate_rea
     
     if not selected_files:
         print("No files selected - token limit may be too low or no files match criteria")
-        return []
+        return [], None
     
     # Get project root path from config
     # Instead of using different paths from each file, use a single project path
@@ -298,7 +298,7 @@ def organize_files(files_info, max_tokens, generate_structure=True, generate_rea
     print(f"Total tokens: {current_tokens} / {max_tokens}")
     print(f"Files exported to: {export_folder}")
     
-    return selected_files
+    return selected_files, export_folder
 
 
 def copy_files_to_output(selected_files, export_folder):

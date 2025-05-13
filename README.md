@@ -17,7 +17,7 @@ Claude AI File Organizer helps developers prepare their codebases for analysis b
 Perfect for getting AI assistance with large codebases where the entire project would exceed token limits.
 
 
-"*The context window and message limit of claude.ai’s free open beta can vary depending on current demand.*
+"*The context window and message limit of claude.ai's free open beta can vary depending on current demand.*
 The **maximum length** of prompt that Claude can process is its context window. The context window for Claude Pro and our API is currently **200k+ tokens (about 500 pages of text or 100 images)**. " [Source - support.anthropic.com](https://support.anthropic.com/en/articles/7996856-what-is-the-maximum-prompt-length).
 
 *It is advised to not go far above 25% of the token limit with project knowledge*.
@@ -32,6 +32,7 @@ The **maximum length** of prompt that Claude can process is its context window. 
 - **API Endpoint Extraction**: Automatically detects API endpoints from various frameworks (Flask, Express, Spring, etc.)
 - **Documentation Generation**: Creates README files and structure visualizations
 - **GUI Settings Manager**: Configure the tool through an intuitive interface
+- **Recursive Pattern Matching**: Support for `**` pattern to include files in subdirectories
 
 ## 📋 Requirements
 
@@ -73,6 +74,9 @@ python src/main.py --path /path/to/my/project
 
 # Set maximum token limit
 python src/main.py --max-tokens 100000
+
+# Don't open output folder automatically
+python src/main.py --no-open
 ```
 
 ### GUI Settings
@@ -99,6 +103,7 @@ ignore = .ignore
 important_files_path = important_files.txt
 generate_structure = true
 max_tokens = 60000
+open_output_folder = true
 
 [file_importance]
 important_formats = .py,.md,.txt,.json
@@ -140,7 +145,21 @@ docs/*.md
 # Main entry points
 main.py
 src/main.py
+
+# Using recursive patterns to include files in subdirectories
+src/**/*.py       # All Python files in src and subdirectories
+docs/**/*.md      # All Markdown files in docs and subdirectories
+**/*.json         # All JSON files anywhere in the project
 ```
+
+#### Pattern Matching Guide
+
+| Pattern | Description |
+|---------|-------------|
+| `folder/*` | Match files directly in the folder |
+| `folder/**/*` | Match all files in the folder and all its subdirectories |
+| `folder/**/*.py` | Match all Python files in the folder and all its subdirectories |
+| `**/*.md` | Match all Markdown files in the entire project |
 
 ## 📂 Output Format
 
@@ -160,7 +179,7 @@ output/
 ## 🧠 Using with Claude AI
 
 1. Run the organizer on your project
-2. Navigate to the output directory
+2. The tool will automatically open the export folder with organized files
 3. Either:
    - Upload the generated files to Claude AI directly
    - Copy the content of the `project_name_structure.json` file

@@ -9,6 +9,7 @@ import sys
 import argparse
 import configparser
 import shutil
+import subprocess
 from pathlib import Path
 import logging
 
@@ -46,7 +47,31 @@ def parse_arguments():
         type=int, 
         help="Maximum token limit (overrides config file)"
     )
+    parser.add_argument(
+        "--no-open", 
+        action="store_true",
+        help="Don't open output folder after processing"
+    )
     return parser.parse_args()
+
+
+def open_folder(folder_path):
+    """Open the folder in the system's file explorer."""
+    if os.path.exists(folder_path):
+        try:
+            if sys.platform == 'win32':
+                os.startfile(folder_path)
+            elif sys.platform == 'darwin':  # macOS
+                subprocess.call(['open', folder_path])
+            else:  # Linux
+                subprocess.call(['xdg-open', folder_path])
+            return True
+        except Exception as e:
+            print(f"Warning: Could not open folder: {e}")
+            return False
+    else:
+        print(f"Warning: Directory does not exist: {folder_path}")
+        return False
 
 
 def main():
@@ -100,10 +125,20 @@ def main():
     Path(output_dir).mkdir(exist_ok=True)
     logger.info(f"Output directory: {output_dir}")
     
+    # Get project name from path
+    project_name = os.path.basename(os.path.normpath(project_path))
+    project_output_path = os.path.join(output_dir, project_name)
+    
+    # Create project output directory if it doesn't exist
+    Path(project_output_path).mkdir(exist_ok=True)
+    
     # Get maximum token limit
     max_tokens = int(config['settings'].get('max_tokens', '60000'))
     print(f"Maximum token limit: {max_tokens}")
     logger.info(f"Maximum token limit: {max_tokens}")
+    
+    # Store the most recent export folder path
+    latest_export_folder = None
     
     # Scan the directory for files
     try:
@@ -124,24 +159,19 @@ def main():
     try:
         print("Organizing files by importance and token count...")
         logger.info("Organizing files by importance and token count...")
-        organized_files = organize_files(
+        organized_files, export_folder = organize_files(
             files_info, 
             max_tokens,
             config['settings'].getboolean('generate_structure', True),
             config['settings'].getboolean('generate_readme', True)
         )
+        latest_export_folder = export_folder  # Store the export folder path
         logger.info(f"Selected {len(organized_files)} files")
+        logger.info(f"Export folder: {export_folder}")
     except Exception as e:
         log_exception(logger, e, "organizing files")
         print(f"Error organizing files: {e}")
         return 1
-    
-    # Get project name from path
-    project_name = os.path.basename(os.path.normpath(project_path))
-    output_path = os.path.join(output_dir, project_name)
-    
-    # Create output directory for this project
-    Path(output_path).mkdir(exist_ok=True)
     
     # Extract API endpoints if enabled
     if config['api_settings'].getboolean('extract_endpoints', False):
@@ -178,7 +208,7 @@ def main():
                 grouped_endpoints = group_endpoints_by_prefix(unique_endpoints)
                 
                 # Save endpoints to JSON file in output directory
-                endpoints_path = os.path.join(output_path, f"{project_name}_endpoints.json")
+                endpoints_path = os.path.join(project_output_path, f"{project_name}_endpoints.json")
                 with open(endpoints_path, 'w', encoding='utf-8') as f:
                     json.dump(grouped_endpoints, f, indent=2)
                 
@@ -195,6 +225,14 @@ def main():
     
     print("Organization complete!")
     logger.info("Organization complete!")
+    
+    # Open folder if enabled and not disabled by command line
+    should_open = not args.no_open and config['settings'].getboolean('open_output_folder', False)
+    if should_open:
+        folder_to_open = latest_export_folder if latest_export_folder else project_output_path
+        print(f"Opening folder: {folder_to_open}")
+        open_folder(folder_to_open)
+    
     return 0
 
 

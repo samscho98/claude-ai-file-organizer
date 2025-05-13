@@ -68,6 +68,9 @@ def validate_config(config):
     
     if 'generate_structure' not in config['settings']:
         config['settings']['generate_structure'] = 'true'
+        
+    if 'open_output_folder' not in config['settings']:
+        config['settings']['open_output_folder'] = 'true'
     
     # Ensure file_importance section has default values
     if 'important_formats' not in config['file_importance']:
@@ -191,6 +194,7 @@ def create_default_config(config_path='config.ini'):
         'ignore': '.ignore',
         'important_files_path': 'important_files.txt',
         'generate_structure': 'true',
+        'open_output_folder': 'true',
         'max_tokens': '60000'
     }
     

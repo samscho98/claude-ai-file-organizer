@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import configparser
 from pathlib import Path
+import subprocess
 
 # Ensure the proper module path is set
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -135,11 +136,26 @@ class SettingsGUI:
         important_files_frame = ttk.Frame(frame)
         important_files_frame.grid(row=3, column=1, sticky=tk.EW, pady=5)
         
-        self.important_files_var = tk.StringVar(value=self.config['settings'].get('important_files_path', 'important_files.txt'))
-        important_files_entry = ttk.Entry(important_files_frame, textvariable=self.important_files_var, width=40)
-        important_files_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        # Determine the default important files path
+        default_file = 'important_files.txt'
+        default_path = os.path.join(project_root, default_file)
         
-        important_files_browse = ttk.Button(important_files_frame, text="Browse...", command=self.browse_important_files)
+        if os.path.exists(default_path):
+            # If the file exists in project root, use it (relative path form)
+            important_files_path = default_file
+        else:
+            # Otherwise use whatever is in the config
+            important_files_path = self.config['settings'].get('important_files_path', default_file)
+            
+        print(f"Important files path (init): {important_files_path}")
+            
+        # Create the entry directly with a plain string value (not using StringVar)
+        self.important_files_entry = ttk.Entry(important_files_frame, width=40)
+        self.important_files_entry.insert(0, important_files_path)  # Insert the text directly
+        self.important_files_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        important_files_browse = ttk.Button(important_files_frame, text="Browse...", 
+                                            command=self.browse_important_files)
         important_files_browse.pack(side=tk.RIGHT, padx=5)
         
         # Max Tokens
@@ -162,6 +178,13 @@ class SettingsGUI:
         self.generate_readme_var = tk.BooleanVar(value=self.config['settings'].getboolean('generate_readme', True))
         generate_readme_check = ttk.Checkbutton(frame, variable=self.generate_readme_var)
         generate_readme_check.grid(row=6, column=1, sticky=tk.W, pady=5)
+        
+        # Open Output Folder After Processing
+        ttk.Label(frame, text="Open Output Folder:").grid(row=7, column=0, sticky=tk.W, pady=5)
+        
+        self.open_output_var = tk.BooleanVar(value=self.config['settings'].getboolean('open_output_folder', True))
+        open_output_check = ttk.Checkbutton(frame, variable=self.open_output_var)
+        open_output_check.grid(row=7, column=1, sticky=tk.W, pady=5)
         
         # Configure grid to expand properly
         frame.columnconfigure(1, weight=1)
@@ -281,13 +304,36 @@ class SettingsGUI:
     
     def browse_important_files(self):
         """Open file browser for important files list."""
+        # Get initial directory - either the directory of the current value or project root
+        current_value = self.important_files_entry.get()
+        if current_value and os.path.dirname(current_value):
+            if os.path.isabs(current_value):
+                initial_dir = os.path.dirname(current_value)
+            else:
+                initial_dir = os.path.dirname(os.path.join(project_root, current_value))
+        else:
+            initial_dir = project_root
+            
         filename = filedialog.askopenfilename(
-            initialdir=os.path.dirname(self.important_files_var.get()) or project_root,
+            initialdir=initial_dir,
             title="Select Important Files List",
             filetypes=(("Text files", "*.txt"), ("All files", "*.*"))
         )
+        
         if filename:
-            self.important_files_var.set(filename)
+            print(f"Selected file: {filename}")
+            
+            # Convert to relative path if within project root
+            if filename.startswith(project_root):
+                rel_path = os.path.relpath(filename, project_root)
+                self.important_files_entry.delete(0, tk.END)
+                self.important_files_entry.insert(0, rel_path)
+                print(f"Using relative path: {rel_path}")
+            else:
+                # Use absolute path if outside project root
+                self.important_files_entry.delete(0, tk.END)
+                self.important_files_entry.insert(0, filename)
+                print(f"Using absolute path: {filename}")
 
     def get_text_content(self, text_widget):
         """Get content from a Text widget."""
@@ -301,10 +347,14 @@ class SettingsGUI:
             self.config['settings']['path'] = self.project_path_var.get()
             self.config['settings']['output_dir'] = self.output_dir_var.get()
             self.config['settings']['ignore'] = self.ignore_file_var.get()
-            self.config['settings']['important_files_path'] = self.important_files_var.get()
+            
+            # Get value directly from entry widget
+            self.config['settings']['important_files_path'] = self.important_files_entry.get()
+            
             self.config['settings']['max_tokens'] = self.max_tokens_var.get()
             self.config['settings']['generate_structure'] = str(self.generate_structure_var.get())
             self.config['settings']['generate_readme'] = str(self.generate_readme_var.get())
+            self.config['settings']['open_output_folder'] = str(self.open_output_var.get())
             
             # File Importance Settings
             self.config['file_importance']['important_formats'] = self.get_text_content(self.important_formats_text)
@@ -314,7 +364,8 @@ class SettingsGUI:
             # API Settings
             self.config['api_settings']['extract_endpoints'] = str(self.extract_endpoints_var.get())
             # We don't need to save an endpoint path anymore as it's automatically generated
-            self.config['api_settings']['endpoint_path'] = ''
+            if 'endpoint_path' in self.config['api_settings']:
+                self.config['api_settings']['endpoint_path'] = ''
             
             # Save to file
             with open(self.config_path, 'w') as configfile:
@@ -325,6 +376,20 @@ class SettingsGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Error saving settings: {e}")
             return False
+    
+    def open_output_folder(self):
+        """Open the output folder in the system's file explorer."""
+        output_dir = self.output_dir_var.get()
+        if os.path.exists(output_dir):
+            try:
+                if sys.platform == 'win32':
+                    os.startfile(output_dir)
+                elif sys.platform == 'darwin':  # macOS
+                    subprocess.call(['open', output_dir])
+                else:  # Linux
+                    subprocess.call(['xdg-open', output_dir])
+            except Exception as e:
+                messagebox.showwarning("Warning", f"Could not open output folder: {e}")
     
     def run_organizer(self):
         """Save settings and run the organizer."""
@@ -351,6 +416,20 @@ class SettingsGUI:
                     cwd=working_dir,
                     env=dict(os.environ, PYTHONPATH=working_dir)
                 )
+                
+                # Wait for the process to complete
+                process.wait()
+                
+                # Open output folder if enabled
+                if self.config['settings'].getboolean('open_output_folder', True):
+                    output_dir = self.config['settings'].get('output_dir', 'output')
+                    if os.path.exists(output_dir):
+                        if sys.platform == 'win32':
+                            os.startfile(output_dir)
+                        elif sys.platform == 'darwin':  # macOS
+                            subprocess.call(['open', output_dir])
+                        else:  # Linux
+                            subprocess.call(['xdg-open', output_dir])
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Error running organizer: {e}")
