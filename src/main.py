@@ -155,7 +155,7 @@ def main():
         print(f"Error scanning directory: {e}")
         return 1
     
-    # Estimate tokens and organize files
+    # Organize files
     try:
         print("Organizing files by importance and token count...")
         logger.info("Organizing files by importance and token count...")
@@ -228,10 +228,9 @@ def main():
     
     # Open folder if enabled and not disabled by command line
     should_open = not args.no_open and config['settings'].getboolean('open_output_folder', False)
-    if should_open:
-        folder_to_open = latest_export_folder if latest_export_folder else project_output_path
-        print(f"Opening folder: {folder_to_open}")
-        open_folder(folder_to_open)
+    if should_open and latest_export_folder:
+        print(f"Opening folder: {latest_export_folder}")
+        open_folder(latest_export_folder)
     
     return 0
 

@@ -7,6 +7,7 @@ node_modules/
 build/
 dist/
 tmp/
+temp/
 cache/
 logs/
 .venv/
@@ -25,9 +26,11 @@ logs/
 .env.*
 config.local.js
 *.svg
+*.ico
 
 # Project-specific excludes
 requirements/
 data/
 output/
 audio/
+migrations/

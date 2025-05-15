@@ -35,3 +35,6 @@ python src\gui\settings.py
 if exist .venv\Scripts\activate.bat (
     call deactivate
 )
+
+:: Pause to view any error messages
+pause

@@ -194,3 +194,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📇 About me
+
+I'm Sam Schonenberg, I'm 26 years old and I'm autistic, I recenelty lost my job and it's difficult finding new work, because I have difficulties leaving the house, so I'm currently trying my hands on freelancing. I have been working on software projects since I'm 7 and I speak Dutch, German and English on a native level.
+
+[LinkedIn Profile](https://www.linkedin.com/in/sams98/)  
+📬 Email: [you@yourdomain.com](mailto:you@yourdomain.com)
+
+I'm currently open to new opportunities, freelance projects, or collaborations.  
+Feel free to reach out if you're interested in working together!

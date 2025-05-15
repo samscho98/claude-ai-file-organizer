@@ -180,7 +180,7 @@ class SettingsGUI:
         generate_readme_check.grid(row=6, column=1, sticky=tk.W, pady=5)
         
         # Open Output Folder After Processing
-        ttk.Label(frame, text="Open Output Folder:").grid(row=7, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text="Show in File Explorer:").grid(row=7, column=0, sticky=tk.W, pady=5)
         
         self.open_output_var = tk.BooleanVar(value=self.config['settings'].getboolean('open_output_folder', True))
         open_output_check = ttk.Checkbutton(frame, variable=self.open_output_var)
@@ -419,17 +419,6 @@ class SettingsGUI:
                 
                 # Wait for the process to complete
                 process.wait()
-                
-                # Open output folder if enabled
-                if self.config['settings'].getboolean('open_output_folder', True):
-                    output_dir = self.config['settings'].get('output_dir', 'output')
-                    if os.path.exists(output_dir):
-                        if sys.platform == 'win32':
-                            os.startfile(output_dir)
-                        elif sys.platform == 'darwin':  # macOS
-                            subprocess.call(['open', output_dir])
-                        else:  # Linux
-                            subprocess.call(['xdg-open', output_dir])
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Error running organizer: {e}")
