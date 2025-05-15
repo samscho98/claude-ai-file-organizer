@@ -1,11 +1,12 @@
 """
-Settings GUI for Claude AI File Organizer.
+Enhanced settings GUI for Claude AI File Organizer with file editors.
+This replaces the original src/gui/settings.py file with added file editors functionality.
 """
 
 import os
 import sys
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, scrolledtext
 import configparser
 from pathlib import Path
 import subprocess
@@ -27,7 +28,7 @@ class SettingsGUI:
         """Initialize the GUI."""
         self.root = root
         self.root.title("Claude AI File Organizer Settings")
-        self.root.geometry("650x600")
+        self.root.geometry("750x650")
         self.root.resizable(True, True)
         
         # Load config or create default if not exists
@@ -38,9 +39,15 @@ class SettingsGUI:
         self.config = load_config(self.config_path)
         
         # Create ignore file if not exists
-        ignore_path = os.path.join(project_root, self.config['settings'].get('ignore', '.ignore'))
-        if not os.path.exists(ignore_path):
-            create_default_ignore(ignore_path)
+        self.ignore_path = os.path.join(project_root, self.config['settings'].get('ignore', '.ignore'))
+        if not os.path.exists(self.ignore_path):
+            create_default_ignore(self.ignore_path)
+        
+        # Get important files path
+        self.important_files_path = self.config['settings'].get('important_files_path', 'important_files.txt')
+        # Convert to absolute path if relative
+        if not os.path.isabs(self.important_files_path):
+            self.important_files_path = os.path.join(project_root, self.important_files_path)
         
         self.create_widgets()
     
@@ -58,10 +65,12 @@ class SettingsGUI:
         general_tab = ttk.Frame(notebook)
         importance_tab = ttk.Frame(notebook)
         api_tab = ttk.Frame(notebook)
+        file_editors_tab = ttk.Frame(notebook)  # New tab for file editors
         
         notebook.add(general_tab, text="General Settings")
         notebook.add(importance_tab, text="File Importance")
         notebook.add(api_tab, text="API Settings")
+        notebook.add(file_editors_tab, text="File Editors")  # Add the new tab
         
         # General Settings Tab
         self.create_general_settings(general_tab)
@@ -71,6 +80,9 @@ class SettingsGUI:
         
         # API Settings Tab
         self.create_api_settings(api_tab)
+        
+        # File Editors Tab (New)
+        self.create_file_editors(file_editors_tab)
         
         # Buttons Frame
         buttons_frame = ttk.Frame(main_frame)
@@ -84,7 +96,6 @@ class SettingsGUI:
         run_button = ttk.Button(buttons_frame, text="Save & Run Organizer", command=self.run_organizer)
         run_button.pack(side=tk.RIGHT, padx=5)
     
-
     def create_general_settings(self, parent):
         """Create general settings widgets."""
         # Create frame with padding
@@ -147,8 +158,6 @@ class SettingsGUI:
             # Otherwise use whatever is in the config
             important_files_path = self.config['settings'].get('important_files_path', default_file)
             
-        print(f"Important files path (init): {important_files_path}")
-            
         # Create the entry directly with a plain string value (not using StringVar)
         self.important_files_entry = ttk.Entry(important_files_frame, width=40)
         self.important_files_entry.insert(0, important_files_path)  # Insert the text directly
@@ -180,7 +189,7 @@ class SettingsGUI:
         generate_readme_check.grid(row=6, column=1, sticky=tk.W, pady=5)
         
         # Open Output Folder After Processing
-        ttk.Label(frame, text="Show in File Explorer:").grid(row=7, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text="Open Output Folder:").grid(row=7, column=0, sticky=tk.W, pady=5)
         
         self.open_output_var = tk.BooleanVar(value=self.config['settings'].getboolean('open_output_folder', True))
         open_output_check = ttk.Checkbutton(frame, variable=self.open_output_var)
@@ -274,6 +283,181 @@ class SettingsGUI:
         # Configure grid to expand properly
         frame.columnconfigure(1, weight=1)
     
+    def create_file_editors(self, parent):
+        """Create file editors tab for editing .ignore and important_files.txt."""
+        # Main frame for the tab
+        frame = ttk.Frame(parent, padding="10")
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Create a notebook for the two editors
+        editors_notebook = ttk.Notebook(frame)
+        editors_notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Create frames for each editor
+        ignore_editor_frame = ttk.Frame(editors_notebook)
+        important_files_editor_frame = ttk.Frame(editors_notebook)
+        
+        editors_notebook.add(ignore_editor_frame, text=".ignore File")
+        editors_notebook.add(important_files_editor_frame, text="important_files.txt")
+        
+        # Create .ignore editor
+        self.create_ignore_editor(ignore_editor_frame)
+        
+        # Create important_files.txt editor
+        self.create_important_files_editor(important_files_editor_frame)
+        
+        # Buttons frame for editor actions
+        buttons_frame = ttk.Frame(frame)
+        buttons_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        # Save Files Button
+        save_files_button = ttk.Button(buttons_frame, text="Save Files", command=self.save_editor_files)
+        save_files_button.pack(side=tk.RIGHT, padx=5)
+        
+        # Reload Files Button
+        reload_files_button = ttk.Button(buttons_frame, text="Reload Files", command=self.reload_editor_files)
+        reload_files_button.pack(side=tk.RIGHT, padx=5)
+    
+    def create_ignore_editor(self, parent):
+        """Create the .ignore file editor."""
+        frame = ttk.Frame(parent, padding="5")
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Add a description label
+        description = ttk.Label(
+            frame, 
+            text="Edit the .ignore file to specify which files and directories to exclude.\n"
+                 "Use patterns similar to .gitignore (directory paths should end with '/') and comment lines start with '#'.",
+            wraplength=650,
+            justify=tk.LEFT
+        )
+        description.pack(fill=tk.X, pady=5)
+        
+        # Add the editor with scrollbars
+        self.ignore_editor = scrolledtext.ScrolledText(frame, wrap=tk.WORD, width=80, height=20)
+        self.ignore_editor.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Load the current .ignore file content
+        self.load_ignore_file()
+    
+    def create_important_files_editor(self, parent):
+        """Create the important_files.txt editor."""
+        frame = ttk.Frame(parent, padding="5")
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Add a description label
+        description = ttk.Label(
+            frame, 
+            text="Edit the important_files.txt file to specify which files should be prioritized.\n"
+                 "Use glob patterns (e.g., *.py, src/*.md) with one pattern per line. Comment lines start with '#'.\n"
+                 "You can use ** for recursive matching (e.g., src/**/*.py matches all Python files in src and its subdirectories).",
+            wraplength=650,
+            justify=tk.LEFT
+        )
+        description.pack(fill=tk.X, pady=5)
+        
+        # Add the editor with scrollbars
+        self.important_files_editor = scrolledtext.ScrolledText(frame, wrap=tk.WORD, width=80, height=20)
+        self.important_files_editor.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Load the current important_files.txt content
+        self.load_important_files()
+    
+    def load_ignore_file(self):
+        """Load the content of the .ignore file into the editor."""
+        try:
+            # Get the ignore file path from the config
+            ignore_path = self.ignore_file_var.get()
+            
+            # Convert to absolute path if it's relative
+            if not os.path.isabs(ignore_path):
+                ignore_path = os.path.join(project_root, ignore_path)
+            
+            # Check if the file exists
+            if os.path.exists(ignore_path):
+                with open(ignore_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Clear the editor and insert the content
+                self.ignore_editor.delete(1.0, tk.END)
+                self.ignore_editor.insert(tk.END, content)
+            else:
+                # If the file doesn't exist, create a default one
+                from src.utils.ignore import create_default_ignore
+                create_default_ignore(ignore_path)
+                
+                # Load the newly created default file
+                with open(ignore_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.ignore_editor.delete(1.0, tk.END)
+                self.ignore_editor.insert(tk.END, content)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error loading .ignore file: {e}")
+    
+    def load_important_files(self):
+        """Load the content of the important_files.txt file into the editor."""
+        try:
+            # Get the important files path from the entry
+            important_files_path = self.important_files_entry.get()
+            
+            # Convert to absolute path if it's relative
+            if not os.path.isabs(important_files_path):
+                important_files_path = os.path.join(project_root, important_files_path)
+            
+            # Check if the file exists
+            if os.path.exists(important_files_path):
+                with open(important_files_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Clear the editor and insert the content
+                self.important_files_editor.delete(1.0, tk.END)
+                self.important_files_editor.insert(tk.END, content)
+            else:
+                # If the file doesn't exist, create a default one
+                from src.utils.config import create_default_important_files
+                create_default_important_files(important_files_path)
+                
+                # Load the newly created default file
+                with open(important_files_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.important_files_editor.delete(1.0, tk.END)
+                self.important_files_editor.insert(tk.END, content)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error loading important_files.txt: {e}")
+    
+    def save_editor_files(self):
+        """Save the content of both editors to their respective files."""
+        try:
+            # Save .ignore file
+            ignore_path = self.ignore_file_var.get()
+            # Convert to absolute path if it's relative
+            if not os.path.isabs(ignore_path):
+                ignore_path = os.path.join(project_root, ignore_path)
+            
+            with open(ignore_path, 'w', encoding='utf-8') as f:
+                f.write(self.ignore_editor.get(1.0, tk.END))
+            
+            # Save important_files.txt
+            important_files_path = self.important_files_entry.get()
+            # Convert to absolute path if it's relative
+            if not os.path.isabs(important_files_path):
+                important_files_path = os.path.join(project_root, important_files_path)
+            
+            with open(important_files_path, 'w', encoding='utf-8') as f:
+                f.write(self.important_files_editor.get(1.0, tk.END))
+            
+            messagebox.showinfo("Success", "Files saved successfully.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error saving files: {e}")
+    
+    def reload_editor_files(self):
+        """Reload both editor files from disk."""
+        self.load_ignore_file()
+        self.load_important_files()
+        messagebox.showinfo("Success", "Files reloaded successfully.")
+    
     def browse_project_path(self):
         """Open directory browser for project path."""
         directory = filedialog.askdirectory(
@@ -301,6 +485,8 @@ class SettingsGUI:
         )
         if filename:
             self.ignore_file_var.set(filename)
+            # Also reload the file content in the editor
+            self.load_ignore_file()
     
     def browse_important_files(self):
         """Open file browser for important files list."""
@@ -321,19 +507,18 @@ class SettingsGUI:
         )
         
         if filename:
-            print(f"Selected file: {filename}")
-            
             # Convert to relative path if within project root
             if filename.startswith(project_root):
                 rel_path = os.path.relpath(filename, project_root)
                 self.important_files_entry.delete(0, tk.END)
                 self.important_files_entry.insert(0, rel_path)
-                print(f"Using relative path: {rel_path}")
             else:
                 # Use absolute path if outside project root
                 self.important_files_entry.delete(0, tk.END)
                 self.important_files_entry.insert(0, filename)
-                print(f"Using absolute path: {filename}")
+            
+            # Also reload the file content in the editor
+            self.load_important_files()
 
     def get_text_content(self, text_widget):
         """Get content from a Text widget."""
@@ -393,6 +578,9 @@ class SettingsGUI:
     
     def run_organizer(self):
         """Save settings and run the organizer."""
+        # First save any changes in the editors
+        self.save_editor_files()
+        
         if self.save_settings():
             try:
                 # Create a direct command to run the main script from the correct directory
@@ -419,6 +607,17 @@ class SettingsGUI:
                 
                 # Wait for the process to complete
                 process.wait()
+                
+                # Open output folder if enabled
+                if self.config['settings'].getboolean('open_output_folder', True):
+                    output_dir = self.config['settings'].get('output_dir', 'output')
+                    if os.path.exists(output_dir):
+                        if sys.platform == 'win32':
+                            os.startfile(output_dir)
+                        elif sys.platform == 'darwin':  # macOS
+                            subprocess.call(['open', output_dir])
+                        else:  # Linux
+                            subprocess.call(['xdg-open', output_dir])
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Error running organizer: {e}")

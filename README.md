@@ -7,7 +7,7 @@ A specialized tool that organizes project files for optimal use with Claude AI, 
 
 ## 🚀 Overview
 
-Claude AI File Organizer helps developers prepare their codebases for analysis by Claude AI.  It intelligently:
+Claude AI File Organizer helps developers prepare their codebases for analysis by Claude AI. It intelligently:
 
 - Selects the most important files from a project based on configurable settings
 - Estimates token usage to stay within Claude AI's limits (default: 60,000 tokens)
@@ -32,6 +32,7 @@ The **maximum length** of prompt that Claude can process is its context window. 
 - **API Endpoint Extraction**: Automatically detects API endpoints from various frameworks (Flask, Express, Spring, etc.)
 - **Documentation Generation**: Creates README files and structure visualizations
 - **GUI Settings Manager**: Configure the tool through an intuitive interface
+- **Integrated File Editors**: Edit `.ignore` and `important_files.txt` files directly in the GUI
 - **Recursive Pattern Matching**: Support for `**` pattern to include files in subdirectories
 
 ## 📋 Requirements
@@ -91,6 +92,12 @@ scripts/run_settings_gui.bat
 python src/gui/settings.py
 ```
 
+The GUI offers several tabs:
+- **General Settings**: Basic configuration options
+- **File Importance**: Define priority for file types, names, and paths
+- **API Settings**: Configure API endpoint extraction
+- **File Editors**: Edit `.ignore` and `important_files.txt` files directly
+
 ## ⚙️ Configuration
 
 The `config.ini` file controls the behavior of the organizer:
@@ -129,6 +136,8 @@ venv/
 *.log
 ```
 
+You can edit this file directly within the GUI through the **File Editors** tab.
+
 ### Important Files List
 
 The `important_files.txt` file prioritizes specific files and patterns:
@@ -151,6 +160,8 @@ src/**/*.py       # All Python files in src and subdirectories
 docs/**/*.md      # All Markdown files in docs and subdirectories
 **/*.json         # All JSON files anywhere in the project
 ```
+
+You can edit this file directly within the GUI through the **File Editors** tab.
 
 #### Pattern Matching Guide
 
@@ -200,7 +211,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 I'm Sam Schonenberg, I'm 26 years old and I'm autistic, I recenelty lost my job and it's difficult finding new work, because I have difficulties leaving the house, so I'm currently trying my hands on freelancing. I have been working on software projects since I'm 7 and I speak Dutch, German and English on a native level.
 
 [LinkedIn Profile](https://www.linkedin.com/in/sams98/)  
-📬 Email: [you@yourdomain.com](mailto:you@yourdomain.com)
+📬 Email: [sam@schonenberg.dev](mailto:sam@schonenberg.dev)
 
 I'm currently open to new opportunities, freelance projects, or collaborations.  
 Feel free to reach out if you're interested in working together!
